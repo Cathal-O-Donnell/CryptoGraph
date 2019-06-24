@@ -3,15 +3,25 @@
 
 <head>
   <meta charset="utf-8">
-  <title>Crypto Graph</title>
+  <title>CryptoGraph</title>
 
   <link rel="stylesheet" href="style.css">
-
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
 </head>
 
 <body>
-  <canvas id="graphCanvas" width="700" height=350></canvas>
+  <div id="mainContainer" class="text-center">
+
+    <div id="canvasContainer">
+      <canvas id="graphCanvas" class="marginAuto" width="800" height=300></canvas>
+    </div>
+
+    <div id="priceInfoContainer" class="displayNone">
+      <p>Low: €<span id="txtLowValue"></span></p>
+      <p>High: €<span id="txtHighValue"></span></p>
+      <p>Avg: €<span id="txtAvgValue"></span></p>
+    </div>
+  </div>
 </body>
 
 </html>

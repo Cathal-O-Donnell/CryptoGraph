@@ -1,15 +1,34 @@
 /*
   API: https://www.coindesk.com/api
-  Dates in given range: https://jsfiddle.net/elchininet/fcym5zq5/
+
+  TODO::
+    - y-axis labels (1000s) - grid lines
+    - x-axis labels (month start)
+    - current price
+    - loading spinner
+    - currency selector
+    - percentage change (API)
+    - 'animated' line draw?
+
+    - other cryptos? - requires new api
+    - two cryptos same graph
+    - on hover price & date display
 */
 
 const CANVAS = document.getElementById('graphCanvas');
 const CONTEXT = CANVAS.getContext('2d');
 
-let dateArr = populateDateArr();
+// Price variables
 let data = getCrypytoPriceData();
 let maxValue = 0;
-getCrypytoPriceData();
+
+// Grid
+let columnPadding = 50;
+let rowPadding = 50;
+
+let rowHeight = (CANVAS.height - rowPadding) / (data.length + 2);
+let columnWidth = (CANVAS.width - columnPadding) / (data.length + 2);
+
 // API
 function getCrypytoPriceData() {
   let requestURL = 'https://api.coindesk.com/v1/bpi/historical/close.json?currency=EUR&' + getDateParamater();
@@ -21,11 +40,15 @@ function getCrypytoPriceData() {
     cache: false,
     async: false,
     success: function(data) {
-
       let dataResult = data.bpi;
+      let objKey, dataObject;
 
       for (var i = 0; i < Object.keys(dataResult).length; i++) {
-        let objKey = Object.keys(dataResult)[i];
+        objKey = Object.keys(dataResult)[i];
+        dataObject = {
+          date: objKey,
+          price: dataResult[objKey].toFixed(2)
+        };
 
         historicalDataResults.push(dataResult[objKey]);
       }
@@ -37,45 +60,6 @@ function getCrypytoPriceData() {
 
   return historicalDataResults;
 }
-
-
-function getHistoricalPriceData() {
-
-  let apiBaseURI = 'https://api.coindesk.com/v1/bpi/historical/close.json?';
-
-  let historicalDataResults = [];
-  let start, end;
-  for (let i = dateArr.length - 1; i >= 0; i--) {
-    let requestURL;
-    dateParameter = dateArr[i];
-
-    requestURL = apiBaseURI + 'start=' + dateParameter + '&end=' + dateParameter;
-
-    $.ajax({
-      url: requestURL,
-      dataType: 'json',
-      cache: false,
-      async: false,
-      success: function(data) {
-        let dataResult = data.bpi;
-        let objKey = Object.keys(dataResult)[0];
-
-        historicalDataResults.push(dataResult[objKey]);
-      },
-      error: function(xhr, ajaxOptions, thrownError) {
-        alert(thrownError + "\r\n" + xhr.statusText + "\r\n" + xhr.responseText);
-      }
-    });
-  }
-
-  return historicalDataResults;
-}
-
-// Grid
-let rowHeight = CANVAS.height / (data.length + 2);
-let columnWidth = CANVAS.width / (data.length + 2);
-let columnPadding = columnWidth * 2;
-let rowPadding = rowHeight * 2;
 
 function drawGrid() {
 
@@ -98,12 +82,13 @@ function drawGrid() {
 
 // Line
 function drawLine(arr) {
+  let x, y;
+
   CONTEXT.beginPath();
-  console.log(arr);
-  // Upside down
+
   for (let i = 0; i < arr.length; i++) {
-    let x = columnWidth * i + (columnWidth * 2);
-    let y = CANVAS.height - (arr[i] + rowPadding);
+    x = columnWidth * i + columnPadding;
+    y = CANVAS.height - (arr[i] + rowPadding);
 
     CONTEXT.lineTo(x, y);
   }
@@ -115,6 +100,7 @@ function drawLine(arr) {
 
 function drawXAxisLabels() {
   let columnIndex = 0;
+
   for (var i = dateArr.length - 1; i >= 0; i--) {
     CONTEXT.fillText(dateArr[i], (columnWidth * columnIndex) + columnPadding, CANVAS.height - rowPadding + 20);
     columnIndex += 1;
@@ -134,10 +120,32 @@ function getMaxArrValue(arr) {
   return max;
 }
 
-function getDateParamater() {
-  let date = new Date();
-  let start, end, monthNumber;
+function getMinArrValue(arr) {
+  let min;
 
+  for (let i = 0; i < arr.length; i++) {
+    if (min == null || arr[i] < min) {
+      min = arr[i];
+    }
+  }
+
+  return min;
+}
+
+function getArrAverageValue(arr) {
+  let total = 0;
+
+  for (let i = 0; i < arr.length; i++) {
+    total += arr[i];
+  }
+
+  return total / arr.length;
+}
+
+function getDateParamater() {
+  let DATE, start, end, monthNumber;
+
+  date = new Date();
   monthNumber = date.getMonth() + 1;
 
   if (monthNumber < 10) {
@@ -150,43 +158,16 @@ function getDateParamater() {
   return 'start=' + start + '&end=' + end;
 }
 
-function populateDateArr() {
-  let date = new Date();
-  let dateArr = [];
-  let monthNumber;
-  for (let i = 0; i < 12; i++) {
-    let thisMonth = date.getMonth();
-    date.setMonth(thisMonth);
-
-    if ((thisMonth - i < 0) && (date.getMonth() != (thisMonth + i))) {
-      date.setDate(0);
-    } else if ((thisMonth - i >= 0) && (date.getMonth() != thisMonth - i)) {
-      date.setDate(0);
-    }
-
-    monthNumber = date.getMonth() + 1;
-
-    if (monthNumber < 10) {
-      monthNumber = '0' + monthNumber;
-    }
-
-    dateArr.push(date.getFullYear() + '-' + monthNumber + '-01');
-
-  }
-
-  return dateArr;
-}
-
 function percentage(partialValue, totalValue) {
   return (100 * partialValue) / totalValue;
 }
 
 function getRelativeArrValues(arr) {
-  let resultArr = [];
+  let xValue, percentageOfCanvas, resultArr = [];
 
   for (let i = 0; i < arr.length; i++) {
-    let xValue = 0;
-    let percentageOfCanvas = percentage(arr[i], maxValue);
+    xValue = 0;
+    percentageOfCanvas = percentage(arr[i], maxValue);
 
     if (percentageOfCanvas > 0) {
       xValue = (CANVAS.height - rowPadding) * (percentageOfCanvas / 100);
@@ -198,12 +179,72 @@ function getRelativeArrValues(arr) {
   return resultArr;
 }
 
+function setInfoText() {
+  document.getElementById('txtLowValue').innerHTML = getMinArrValue(data).toFixed(2);
+  document.getElementById('txtHighValue').innerHTML = getMaxArrValue(data).toFixed(2);
+  document.getElementById('txtAvgValue').innerHTML = getArrAverageValue(data).toFixed(2);
+
+  document.getElementById('priceInfoContainer').style.display = 'block';
+}
+
+function populateYAxisValues(maxValue) {
+  let resultArr = [];
+  let lastValueAdded = 0;
+
+  while (lastValueAdded <= maxValue) {
+    lastValueAdded += 1000;
+    resultArr.push(lastValueAdded);
+  }
+
+  lastValueAdded += 1000;
+  resultArr.push(lastValueAdded);
+
+  return resultArr;
+}
+
+function drawRowLines(arr) {
+  console.log(arr);
+  for (var y = 0; y <= arr.length; y++) {
+    CONTEXT.moveTo(0, CANVAS.height - arr[y] - rowPadding);
+    CONTEXT.lineTo(CANVAS.width, CANVAS.height - arr[y] - rowPadding);
+  }
+
+  CONTEXT.lineWidth = 1;
+  CONTEXT.strokeStyle = "#ccc";
+  CONTEXT.stroke();
+}
+
+function drawColumnLines() {
+  let monthColumnWidth = (CANVAS.width - columnPadding) / 12;
+
+  for (var x = 0; x < 12; x++) {
+    CONTEXT.moveTo(monthColumnWidth * x + columnPadding, 0);
+    CONTEXT.lineTo(monthColumnWidth * x + columnPadding, CANVAS.height - columnPadding);
+  }
+
+  CONTEXT.lineWidth = 0.5;
+  CONTEXT.strokeStyle = "#ccc";
+  CONTEXT.stroke();
+}
+
 (function() {
   let dataRelativeArr = [];
+  let yAxisValuesArr = [];
+  let yAxisValuesRelativeArr = [];
+
+  CONTEXT.fillStyle = "#f2f2f2";
+  CONTEXT.fillRect(0, 0, CANVAS.width, CANVAS.height);
+
   maxValue = getMaxArrValue(data);
+  yAxisValuesArr = populateYAxisValues(maxValue);
+  yAxisValuesRelativeArr = getRelativeArrValues(yAxisValuesArr);
+
+  drawRowLines(yAxisValuesRelativeArr);
+  drawColumnLines();
+
   maxValue += maxValue / 100 * 10;
   dataRelativeArr = getRelativeArrValues(data);
-
+  setInfoText();
   //drawGrid();
   drawLine(dataRelativeArr);
   //drawXAxisLabels();

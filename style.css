@@ -1,3 +1,30 @@
 #graphCanvas {
-  border: 1px solid red;
+  border: 1px solid black;
+}
+
+#mainContainer {
+  width: 95vw;
+}
+
+h2 {
+  color: #4d4d4d;
+}
+
+#canvasContainer {
+  width: 100vw;
+  height: 302px;
+  position: relative;
+  background-color: #d9d9d9;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.marginAuto {
+  margin: 0 auto;
+}
+
+.displayNone {
+  display: none;
 }
