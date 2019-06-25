@@ -2,32 +2,32 @@
   API: https://www.coindesk.com/api
 
   TODO::
-    - y-axis labels (1000s) - grid lines
-    - x-axis labels (month start)
+    / y-axis labels (1000s) - grid lines
+    - x-axis labels (month start + year number)
     - current price
     - loading spinner
     - currency selector
-    - percentage change (API)
+    - percentage change (calculate over last day/ week/ month/ year)
     - 'animated' line draw?
-
     - other cryptos? - requires new api
-    - two cryptos same graph
+    - two cryptos same graph (graph legend)
     - on hover price & date display
 */
 
 const CANVAS = document.getElementById('graphCanvas');
 const CONTEXT = CANVAS.getContext('2d');
 
-// Price variables
+let dataObjArr = [];
 let data = getCrypytoPriceData();
 let maxValue = 0;
+let pricePeak = 0;
 
-// Grid
+let monthArr = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
 let columnPadding = 50;
 let rowPadding = 50;
-
-let rowHeight = (CANVAS.height - rowPadding) / (data.length + 2);
-let columnWidth = (CANVAS.width - columnPadding) / (data.length + 2);
+let rowHeight = (CANVAS.height - rowPadding) / dataObjArr.length;
+let columnWidth = (CANVAS.width - columnPadding) / dataObjArr.length;
 
 // API
 function getCrypytoPriceData() {
@@ -45,11 +45,13 @@ function getCrypytoPriceData() {
 
       for (var i = 0; i < Object.keys(dataResult).length; i++) {
         objKey = Object.keys(dataResult)[i];
+
         dataObject = {
           date: objKey,
           price: dataResult[objKey].toFixed(2)
         };
 
+        dataObjArr.push(dataObject);
         historicalDataResults.push(dataResult[objKey]);
       }
     },
@@ -59,25 +61,6 @@ function getCrypytoPriceData() {
   });
 
   return historicalDataResults;
-}
-
-function drawGrid() {
-
-  // Rows
-  for (var y = data.length; y <= data.length; y++) {
-    CONTEXT.moveTo(columnPadding, rowHeight * y);
-    CONTEXT.lineTo(CANVAS.width, rowHeight * y);
-  }
-
-  // Columns
-  for (var x = 0; x < data.length; x++) {
-    CONTEXT.moveTo(columnWidth * x + columnPadding, 0);
-    CONTEXT.lineTo(columnWidth * x + columnPadding, CANVAS.height - rowPadding);
-  }
-
-  CONTEXT.lineWidth = 1;
-  CONTEXT.strokeStyle = "#ccc";
-  CONTEXT.stroke();
 }
 
 // Line
@@ -98,15 +81,6 @@ function drawLine(arr) {
   CONTEXT.stroke();
 }
 
-function drawXAxisLabels() {
-  let columnIndex = 0;
-
-  for (var i = dateArr.length - 1; i >= 0; i--) {
-    CONTEXT.fillText(dateArr[i], (columnWidth * columnIndex) + columnPadding, CANVAS.height - rowPadding + 20);
-    columnIndex += 1;
-  }
-}
-
 // Misc
 function getMaxArrValue(arr) {
   let max;
@@ -118,6 +92,18 @@ function getMaxArrValue(arr) {
   }
 
   return max;
+}
+
+function getPricePeak(arr) {
+  let peakPrice;
+
+  for (let i = 0; i < arr.length; i++) {
+    if (peakPrice == null || arr[i].price > peakPrice) {
+      peakPrice = arr[i].price;
+    }
+  }
+
+  return peakPrice;
 }
 
 function getMinArrValue(arr) {
@@ -180,15 +166,17 @@ function getRelativeArrValues(arr) {
 }
 
 function setInfoText() {
-  document.getElementById('txtLowValue').innerHTML = getMinArrValue(data).toFixed(2);
-  document.getElementById('txtHighValue').innerHTML = getMaxArrValue(data).toFixed(2);
-  document.getElementById('txtAvgValue').innerHTML = getArrAverageValue(data).toFixed(2);
+  let selectedCurrency = getSelectedCurrency();
+
+  document.getElementById('txtLowValue').innerHTML = getCurrencySymbol(selectedCurrency) + getMinArrValue(data).toFixed(2);
+  document.getElementById('txtHighValue').innerHTML = getCurrencySymbol(selectedCurrency) + getMaxArrValue(data).toFixed(2);
+  document.getElementById('txtAvgValue').innerHTML = getCurrencySymbol(selectedCurrency) + getArrAverageValue(data).toFixed(2);
 
   document.getElementById('priceInfoContainer').style.display = 'block';
 }
 
 function populateYAxisValues(maxValue) {
-  let resultArr = [];
+  let resultArr = [0];
   let lastValueAdded = 0;
 
   while (lastValueAdded <= maxValue) {
@@ -196,26 +184,23 @@ function populateYAxisValues(maxValue) {
     resultArr.push(lastValueAdded);
   }
 
-  lastValueAdded += 1000;
-  resultArr.push(lastValueAdded);
-
   return resultArr;
 }
 
 function drawRowLines(arr) {
-  console.log(arr);
+
   for (var y = 0; y <= arr.length; y++) {
-    CONTEXT.moveTo(0, CANVAS.height - arr[y] - rowPadding);
+    CONTEXT.moveTo(rowPadding, CANVAS.height - arr[y] - rowPadding);
     CONTEXT.lineTo(CANVAS.width, CANVAS.height - arr[y] - rowPadding);
   }
 
-  CONTEXT.lineWidth = 1;
+  CONTEXT.lineWidth = 0.5;
   CONTEXT.strokeStyle = "#ccc";
   CONTEXT.stroke();
 }
 
 function drawColumnLines() {
-  let monthColumnWidth = (CANVAS.width - columnPadding) / 12;
+  let monthColumnWidth = (CANVAS.width - columnPadding) / monthArr.length;
 
   for (var x = 0; x < 12; x++) {
     CONTEXT.moveTo(monthColumnWidth * x + columnPadding, 0);
@@ -227,25 +212,83 @@ function drawColumnLines() {
   CONTEXT.stroke();
 }
 
+function drawXAxisLabels(dataObjArr) {
+  let monthColumnWidth = (CANVAS.width - columnPadding) / monthArr.length;
+  let monthIndexSequenceArr = [], yearIndexSequenceArr = [], currentMonth, priceMonth, priceYear;
+
+  CONTEXT.font = "10px Verdana";
+  CONTEXT.fillStyle = "#4AA5D9";
+
+  for (let i = 0; i < dataObjArr.length; i++) {
+    priceMonth = dataObjArr[i].date.split('-')[1];
+    priceYear = dataObjArr[i].date.split('-')[0];
+
+    if (priceMonth != currentMonth) {
+      currentMonth = priceMonth;
+
+      monthIndexSequenceArr.push(priceMonth.replace(/^[0\.]+/, ''));
+      yearIndexSequenceArr.push(priceYear.substring(2));
+    }
+  }
+
+  // Remove first element of array (current month)
+  monthIndexSequenceArr.shift();
+  yearIndexSequenceArr.shift();
+  for (let i = 0; i <= monthIndexSequenceArr.length; i++) {
+
+    CONTEXT.fillText(monthArr[monthIndexSequenceArr[i] - 1] + " '" + yearIndexSequenceArr[i], monthColumnWidth * i + columnPadding, CANVAS.height - (rowPadding / 2));
+  }
+}
+
+function drawYAxisLabels(arr, relativeYValues) {  
+  CONTEXT.font = "10px Verdana";
+  CONTEXT.fillStyle = "#4AA5D9";
+
+  for (let i = arr.length - 1; i >= 0; i--) {
+    CONTEXT.fillText(arr[i], (columnPadding / 2) - (columnPadding / 5), CANVAS.height - relativeYValues[i] - rowPadding);
+  }
+}
+
+function getSelectedCurrency() {
+  return 'EUR'; // hardcoded for now
+}
+
+function getCurrencySymbol(selectedCurrency) {
+
+  switch(selectedCurrency) {
+    case 'EUR':
+      return '€';
+      break;
+    case 'USD':
+      return '$'
+      break;
+    case 'GBP':
+      return '£';
+      break;
+  }
+}
+
+// DOM Ready
 (function() {
-  let dataRelativeArr = [];
-  let yAxisValuesArr = [];
-  let yAxisValuesRelativeArr = [];
+  let dataMaxValue, dataRelativeArr = [], yAxisValuesArr = [], yAxisValuesRelativeArr = [];
 
   CONTEXT.fillStyle = "#f2f2f2";
   CONTEXT.fillRect(0, 0, CANVAS.width, CANVAS.height);
 
-  maxValue = getMaxArrValue(data);
-  yAxisValuesArr = populateYAxisValues(maxValue);
+  dataMaxValue = getMaxArrValue(data);
+  pricePeak = getPricePeak(dataObjArr);
+
+  yAxisValuesArr = populateYAxisValues(dataMaxValue);
+  maxValue = yAxisValuesArr[yAxisValuesArr.length - 1];
+
   yAxisValuesRelativeArr = getRelativeArrValues(yAxisValuesArr);
 
   drawRowLines(yAxisValuesRelativeArr);
   drawColumnLines();
-
-  maxValue += maxValue / 100 * 10;
   dataRelativeArr = getRelativeArrValues(data);
+
   setInfoText();
-  //drawGrid();
   drawLine(dataRelativeArr);
-  //drawXAxisLabels();
+  drawYAxisLabels(yAxisValuesArr, yAxisValuesRelativeArr);
+  drawXAxisLabels(dataObjArr);
 })();
