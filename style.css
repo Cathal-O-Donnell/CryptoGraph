@@ -1,20 +1,20 @@
+
 #graphCanvas {
   border: 1px solid black;
+  background-color: #f2f2f2;
+
 }
 
 #mainContainer {
   width: 95vw;
 }
 
-h2 {
-  color: #4d4d4d;
-}
-
 #canvasContainer {
+  margin-top: 20px;
   width: 100vw;
   height: 302px;
-  position: relative;
-  background-color: #d9d9d9;
+  margin: 0 auto;
+  text-align: center;
 }
 
 .text-center {
@@ -27,4 +27,12 @@ h2 {
 
 .displayNone {
   display: none;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.col-md-offset-2 {
+    margin-left: 16.66666667%;
 }

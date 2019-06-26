@@ -221,7 +221,7 @@ function setInfoText() {
   document.getElementById('txtHighValue').innerHTML = getCurrencySymbol(selectedCurrency) + getMaxArrValue(priceArr).toFixed(2);
   document.getElementById('txtAvgValue').innerHTML = getCurrencySymbol(selectedCurrency) + getArrAverageValue(priceArr).toFixed(2);
 
-  document.getElementById('priceInfoContainer').style.display = 'block';
+  // document.getElementById('priceInfoContainer').style.display = 'block';
 }
 
 function populateYAxisValues(maxValue) {
