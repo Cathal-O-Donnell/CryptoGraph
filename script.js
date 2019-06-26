@@ -4,8 +4,8 @@
   TODO::
     / y-axis labels (1000s) - grid lines
     - x-axis labels (month start + year number)
-    - current price
-    - loading spinner
+    - column line refactor - draw line when month changes in data
+    / current price
     - currency selector
     - percentage change (calculate over last day/ week/ month/ year)
     - 'animated' line draw?
@@ -17,8 +17,10 @@
 const CANVAS = document.getElementById('graphCanvas');
 const CONTEXT = CANVAS.getContext('2d');
 
-let dataObjArr = [];
-let data = getCrypytoPriceData();
+let dataObjArr = getCrypytoPriceData();
+let priceArr = [];
+let currentPriceObj = getCurrentPrice();
+
 let maxValue = 0;
 let pricePeak = 0;
 
@@ -30,10 +32,45 @@ let rowHeight = (CANVAS.height - rowPadding) / dataObjArr.length;
 let columnWidth = (CANVAS.width - columnPadding) / dataObjArr.length;
 
 // API
+function getCurrentPrice() {
+  // Current price https://api.coindesk.com/v1/bpi/currentprice/EUR
+  let dataObj, selectedCurreny, requestURL;
+
+  selectedCurreny = getSelectedCurrency()
+  requestURL = 'https://api.coindesk.com/v1/bpi/currentprice/' + selectedCurreny;
+
+  $.ajax({
+    url: requestURL,
+    dataType: 'json',
+    cache: false,
+    async: false,
+    success: function(data) {
+      let dataResult = data.bpi;
+      let objKey, dataObject;
+
+      for (var i = 0; i < Object.keys(dataResult).length; i++) {
+        let dataResult = data.bpi[selectedCurreny];
+        let dataResultPrice = dataResult.rate.replace(',','');
+
+        dataObj = {
+          date: getCurrentDateFormatted(),
+          price: parseFloat(dataResultPrice)
+        }
+      }
+    },
+    error: function(xhr, ajaxOptions, thrownError) {
+      alert(thrownError + "\r\n" + xhr.statusText + "\r\n" + xhr.responseText);
+    }
+  });
+
+  return dataObj;
+}
+
 function getCrypytoPriceData() {
   let requestURL = 'https://api.coindesk.com/v1/bpi/historical/close.json?currency=EUR&' + getDateParamater();
   let historicalDataResults = [];
 
+  // Historical data
   $.ajax({
     url: requestURL,
     dataType: 'json',
@@ -51,8 +88,7 @@ function getCrypytoPriceData() {
           price: dataResult[objKey].toFixed(2)
         };
 
-        dataObjArr.push(dataObject);
-        historicalDataResults.push(dataResult[objKey]);
+        historicalDataResults.push(dataObject);
       }
     },
     error: function(xhr, ajaxOptions, thrownError) {
@@ -82,6 +118,17 @@ function drawLine(arr) {
 }
 
 // Misc
+function getCurrentDateFormatted() {
+  let date = new Date();
+  let month = date.getMonth() + 1;
+
+  if (month < 10) {
+    month = '0' + month;
+  }
+
+  return date.getFullYear() + '-' + month + '-' + date.getDate();
+}
+
 function getMaxArrValue(arr) {
   let max;
 
@@ -168,16 +215,17 @@ function getRelativeArrValues(arr) {
 function setInfoText() {
   let selectedCurrency = getSelectedCurrency();
 
-  document.getElementById('txtLowValue').innerHTML = getCurrencySymbol(selectedCurrency) + getMinArrValue(data).toFixed(2);
-  document.getElementById('txtHighValue').innerHTML = getCurrencySymbol(selectedCurrency) + getMaxArrValue(data).toFixed(2);
-  document.getElementById('txtAvgValue').innerHTML = getCurrencySymbol(selectedCurrency) + getArrAverageValue(data).toFixed(2);
+    document.getElementById('txtCurrentValue').innerHTML = getCurrencySymbol(selectedCurrency) + currentPriceObj.price.toFixed(2);
+
+  document.getElementById('txtLowValue').innerHTML = getCurrencySymbol(selectedCurrency) + getMinArrValue(priceArr).toFixed(2);
+  document.getElementById('txtHighValue').innerHTML = getCurrencySymbol(selectedCurrency) + getMaxArrValue(priceArr).toFixed(2);
+  document.getElementById('txtAvgValue').innerHTML = getCurrencySymbol(selectedCurrency) + getArrAverageValue(priceArr).toFixed(2);
 
   document.getElementById('priceInfoContainer').style.display = 'block';
 }
 
 function populateYAxisValues(maxValue) {
-  let resultArr = [0];
-  let lastValueAdded = 0;
+  let resultArr = [0], lastValueAdded = 0;
 
   while (lastValueAdded <= maxValue) {
     lastValueAdded += 1000;
@@ -202,9 +250,9 @@ function drawRowLines(arr) {
 function drawColumnLines() {
   let monthColumnWidth = (CANVAS.width - columnPadding) / monthArr.length;
 
-  for (var x = 0; x < 12; x++) {
-    CONTEXT.moveTo(monthColumnWidth * x + columnPadding, 0);
-    CONTEXT.lineTo(monthColumnWidth * x + columnPadding, CANVAS.height - columnPadding);
+  for (var x = 0; x < monthArr.length; x++) {
+    CONTEXT.moveTo(monthColumnWidth * x, 0);
+    CONTEXT.lineTo(monthColumnWidth * x, CANVAS.height - columnPadding);
   }
 
   CONTEXT.lineWidth = 0.5;
@@ -212,35 +260,51 @@ function drawColumnLines() {
   CONTEXT.stroke();
 }
 
-function drawXAxisLabels(dataObjArr) {
-  let monthColumnWidth = (CANVAS.width - columnPadding) / monthArr.length;
-  let monthIndexSequenceArr = [], yearIndexSequenceArr = [], currentMonth, priceMonth, priceYear;
+function drawColumnLine(x, dateText) {
 
+  CONTEXT.moveTo(columnWidth * x + columnPadding, 0);
+  CONTEXT.lineTo(columnWidth * x + columnPadding, CANVAS.height - columnPadding);
+
+  CONTEXT.lineWidth = 0.5;
+  CONTEXT.strokeStyle = "#ccc";
+  CONTEXT.stroke();
+}
+
+function writeXAxisDate(x, dateText) {
   CONTEXT.font = "10px Verdana";
   CONTEXT.fillStyle = "#4AA5D9";
+
+  CONTEXT.fillText(dateText, columnWidth * x + columnPadding, CANVAS.height - (rowPadding / 2));
+}
+
+function drawXAxisLabels(dataObjArr) {
+  let monthIndexSequenceArr = [], yearIndexSequenceArr = [], currentMonth, priceMonth, priceYear, monthColumnWidth
+
+  monthColumnWidth = (CANVAS.width - columnPadding) / monthArr.length;
 
   for (let i = 0; i < dataObjArr.length; i++) {
     priceMonth = dataObjArr[i].date.split('-')[1];
     priceYear = dataObjArr[i].date.split('-')[0];
+    priceDay = dataObjArr[i].date.split('-')[2];
 
     if (priceMonth != currentMonth) {
       currentMonth = priceMonth;
 
       monthIndexSequenceArr.push(priceMonth.replace(/^[0\.]+/, ''));
       yearIndexSequenceArr.push(priceYear.substring(2));
+
+      let dateString = monthArr[priceMonth.replace(/^[0\.]+/, '') - 1] + '-' + priceYear.substring(2);
+
+      drawColumnLine(i);
+
+      if (parseInt(priceDay) < 15) {
+        writeXAxisDate(i, dateString);
+      }
     }
-  }
-
-  // Remove first element of array (current month)
-  monthIndexSequenceArr.shift();
-  yearIndexSequenceArr.shift();
-  for (let i = 0; i <= monthIndexSequenceArr.length; i++) {
-
-    CONTEXT.fillText(monthArr[monthIndexSequenceArr[i] - 1] + " '" + yearIndexSequenceArr[i], monthColumnWidth * i + columnPadding, CANVAS.height - (rowPadding / 2));
   }
 }
 
-function drawYAxisLabels(arr, relativeYValues) {  
+function drawYAxisLabels(arr, relativeYValues) {
   CONTEXT.font = "10px Verdana";
   CONTEXT.fillStyle = "#4AA5D9";
 
@@ -268,27 +332,46 @@ function getCurrencySymbol(selectedCurrency) {
   }
 }
 
-// DOM Ready
-(function() {
+function populatePriceArr(arr) {
+  let resultsArr = []
+  for (let i = 0; i < arr.length; i++) {
+    resultsArr.push(parseFloat(arr[i].price));
+  }
+
+  return resultsArr;
+}
+
+function init() {
   let dataMaxValue, dataRelativeArr = [], yAxisValuesArr = [], yAxisValuesRelativeArr = [];
 
   CONTEXT.fillStyle = "#f2f2f2";
   CONTEXT.fillRect(0, 0, CANVAS.width, CANVAS.height);
 
-  dataMaxValue = getMaxArrValue(data);
-  pricePeak = getPricePeak(dataObjArr);
+  dataObjArr.push(currentPriceObj);
 
+  priceArr = populatePriceArr(dataObjArr);
+
+  dataMaxValue = getMaxArrValue(priceArr);
+  pricePeak = getPricePeak(dataObjArr);
   yAxisValuesArr = populateYAxisValues(dataMaxValue);
   maxValue = yAxisValuesArr[yAxisValuesArr.length - 1];
 
+  // Get relative data
   yAxisValuesRelativeArr = getRelativeArrValues(yAxisValuesArr);
+  dataRelativeArr = getRelativeArrValues(priceArr);
 
+  // Draw grid lines and axis
   drawRowLines(yAxisValuesRelativeArr);
-  drawColumnLines();
-  dataRelativeArr = getRelativeArrValues(data);
-
-  setInfoText();
-  drawLine(dataRelativeArr);
+  //drawColumnLines();
   drawYAxisLabels(yAxisValuesArr, yAxisValuesRelativeArr);
   drawXAxisLabels(dataObjArr);
+
+  // Display price info
+  setInfoText();
+  drawLine(dataRelativeArr);
+}
+
+// DOM Ready
+(function() {
+  init();
 })();
