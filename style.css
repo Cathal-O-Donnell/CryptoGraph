@@ -1,20 +1,28 @@
-
-#graphCanvas {
-  border: 1px solid black;
+#mainContainer {
   background-color: #f2f2f2;
-
+  border: 1px solid black;
+  width: 100%;
 }
 
-#mainContainer {
-  width: 95vw;
+#lstCurrency {
+  float: right;
+  margin-right: 10px;
+  margin-top: 5px;
+}
+
+#btnRefresh {
+  margin-top: 5px;
 }
 
 #canvasContainer {
-  margin-top: 20px;
-  width: 100vw;
   height: 302px;
-  margin: 0 auto;
+  margin-top: 20px;
   text-align: center;
+}
+
+#graphCanvas {
+  background-color: #fff;
+  border: 2px solid black;
 }
 
 .text-center {
@@ -29,10 +37,10 @@
   display: none;
 }
 
-.text-center {
-  text-align: center;
+.col-md-offset-2 {
+  margin-left: 16.66666667%;
 }
 
-.col-md-offset-2 {
-    margin-left: 16.66666667%;
+.marginTop5 {
+  margin-top: 5px;
 }
