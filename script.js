@@ -1,5 +1,9 @@
 /*
   API: https://www.coindesk.com/api
+
+  - Canvas refresh not working properly
+  - price/ date tooltip
+  - refactor
 */
 
 "use strict"
@@ -7,14 +11,18 @@
 const CANVAS = document.getElementById('graphCanvas');
 const CONTEXT = CANVAS.getContext('2d');
 
-let dataObjArr = [], priceArr = [], currentPriceObj = [];
+let dataObjArr = [],
+  priceArr = [],
+  currentPriceObj = [];
 let maxValue, pricePeak, dateStartString, dateEndString, rowHeight, columnWidth;
-let monthArr = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-let columnPadding = 50, rowPadding = 50;
+let monthArr = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+let columnPadding = 50,
+  rowPadding = 50;
 
 function init() {
-  let dataMaxValue, dataRelativeArr = [], yAxisValuesArr = [], yAxisValuesRelativeArr = [];
-  console.log('init');
+  let dataMaxValue, dataRelativeArr = [],
+    yAxisValuesArr = [],
+    yAxisValuesRelativeArr = [];
 
   // Data
   dataObjArr = getCrypytoPriceData();
@@ -42,6 +50,12 @@ function init() {
   drawLine(dataRelativeArr);
 }
 
+function resetData() {
+  CONTEXT.clearRect(0, 0, CANVAS.width, CANVAS.height);
+
+  init();
+}
+
 // API
 function getCurrentPrice() {
   let dataObj, selectedCurreny, requestURL;
@@ -55,10 +69,10 @@ function getCurrentPrice() {
     async: false,
     success: function(data) {
 
-        dataObj = {
-          date: getCurrentDateFormatted(),
-          price: parseFloat(data.bpi[selectedCurreny].rate.replace(',',''))
-        }
+      dataObj = {
+        date: getCurrentDateFormatted(),
+        price: parseFloat(data.bpi[selectedCurreny].rate.replace(',', ''))
+      }
     },
     error: function(xhr, ajaxOptions, thrownError) {
       console.log(thrownError + "\r\n" + xhr.statusText + "\r\n" + xhr.responseText)
@@ -125,7 +139,8 @@ function setInfoText() {
 }
 
 function populateYAxisValues(maxValue) {
-  let resultArr = [0], lastValueAdded = 0;
+  let resultArr = [0],
+    lastValueAdded = 0;
 
   while (lastValueAdded <= maxValue) {
     resultArr.push(lastValueAdded += 1000);
@@ -165,7 +180,9 @@ function writeXAxisDate(x, dateText) {
 }
 
 function drawXAxisLabels(dataObjArr) {
-  let monthIndexSequenceArr = [], yearIndexSequenceArr = [], currentMonth, priceMonth, priceYear, priceDay, monthColumnWidth
+  let monthIndexSequenceArr = [],
+    yearIndexSequenceArr = [],
+    currentMonth, priceMonth, priceYear, priceDay, monthColumnWidth;
 
   monthColumnWidth = (CANVAS.width - columnPadding) / monthArr.length;
 
@@ -292,7 +309,7 @@ function getSelectedCurrency() {
 
 function getCurrencySymbol(selectedCurrency) {
 
-  switch(selectedCurrency) {
+  switch (selectedCurrency) {
     case 'EUR':
       return '€';
       break;
@@ -316,8 +333,8 @@ function populatePriceArr(arr) {
 }
 
 function setUpEventListeners() {
-  document.getElementById('lstCurrency').addEventListener('change', init);
-  document.getElementById('btnRefresh').addEventListener('click', init);
+  document.getElementById('lstCurrency').addEventListener('change', resetData);
+  document.getElementById('btnRefresh').addEventListener('click', resetData);
 }
 
 // DOM Ready

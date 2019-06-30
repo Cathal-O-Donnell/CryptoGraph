@@ -1,6 +1,6 @@
 #mainContainer {
-  background-color: #f2f2f2;
-  border: 1px solid black;
+  background-color: #F8F9FA;
+  border: 1px solid #ccc;
   width: 100%;
 }
 
@@ -22,7 +22,8 @@
 
 #graphCanvas {
   background-color: #fff;
-  border: 2px solid black;
+  border: 2px solid #ccc;
+  border-radius: 4px;
 }
 
 .text-center {
