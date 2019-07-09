@@ -24,6 +24,7 @@
   background-color: #fff;
   border: 2px solid #ccc;
   border-radius: 4px;
+  width: 1200px;
 }
 
 .text-center {
@@ -42,6 +43,26 @@
   margin-left: 16.66666667%;
 }
 
+.marginBottom10 {
+  margin-bottom: 10px;
+}
+
+.marginBottom20 {
+  margin-bottom: 20px;
+}
+
 .marginTop5 {
   margin-top: 5px;
+}
+
+.marginTop10 {
+  margin-top: 10px;
+}
+
+.marginTop20 {
+  margin-top: 20px;
+}
+
+.gitHubIcon {
+  color: #000;
 }

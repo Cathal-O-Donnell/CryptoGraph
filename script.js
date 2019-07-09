@@ -1,10 +1,5 @@
-/*
-  API: https://www.coindesk.com/api
-
-  - Canvas refresh not working properly
-  - price/ date tooltip
-  - refactor
-*/
+// API: https://www.coindesk.com/api
+// https://www.blockchain.com/api/charts_api
 
 "use strict"
 
@@ -14,10 +9,10 @@ const CONTEXT = CANVAS.getContext('2d');
 let dataObjArr = [],
   priceArr = [],
   currentPriceObj = [];
-let maxValue, pricePeak, dateStartString, dateEndString, rowHeight, columnWidth;
+let maxValue, pricePeak, dateStartString, dateEndString, rowHeight, columnWidth, columnPadding = 50,
+  rowPadding = 50,
+  lineWidth = 0.5;
 let monthArr = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-let columnPadding = 50,
-  rowPadding = 50;
 
 function init() {
   let dataMaxValue, dataRelativeArr = [],
@@ -45,15 +40,41 @@ function init() {
   drawYAxisLabels(yAxisValuesArr, yAxisValuesRelativeArr);
   drawXAxisLabels(dataObjArr);
 
-  // Display price info
+  // Display info text
   setInfoText();
   drawLine(dataRelativeArr);
+  getMiscInfo();
 }
 
 function resetData() {
   CONTEXT.clearRect(0, 0, CANVAS.width, CANVAS.height);
 
   init();
+}
+
+function getMiscInfo() {
+
+  $.ajax({
+    url: 'https://api.blockchain.info/stats',
+    dataType: 'json',
+    async: true,
+    success: function(data) {
+
+      document.getElementById('txtHashRate').innerHTML = data.hash_rate;
+      document.getElementById('txtTotalFees').innerHTML = data.total_fees_btc;
+      document.getElementById('txtTotalMined').innerHTML = data.n_btc_mined;
+      document.getElementById('txtTotalCoins').innerHTML = data.totalbc;
+      document.getElementById('txtTotalBlocks').innerHTML = data.n_blocks_total;
+      document.getElementById('txtBlockSize').innerHTML = data.blocks_size;
+      document.getElementById('txtDifficulty').innerHTML = data.difficulty;
+      document.getElementById('txtBitcoinsSent').innerHTML = data.total_btc_sent;
+      document.getElementById('txtMinBetweenBlocks').innerHTML = data.minutes_between_blocks;
+    },
+    error: function(xhr, ajaxOptions, thrownError) {
+      console.log(thrownError + "\r\n" + xhr.statusText + "\r\n" + xhr.responseText)
+      alert('An error has occured');
+    }
+  });
 }
 
 // API
@@ -125,17 +146,20 @@ function drawLine(arr) {
     CONTEXT.lineTo(x, y);
   }
 
-  CONTEXT.lineWidth = 2;
+  CONTEXT.lineWidth = (lineWidth * 4);
   CONTEXT.strokeStyle = "#60be7a";
   CONTEXT.stroke();
+
+  CONTEXT.closePath();
 }
 
 function setInfoText() {
-  let selectedCurrency = getSelectedCurrency();
+  let selectedCurrency = getSelectedCurrency(),
+    currencySymbol = getCurrencySymbol(selectedCurrency);
 
-  document.getElementById('txtCurrentValue').innerHTML = getCurrencySymbol(selectedCurrency) + currentPriceObj.price.toFixed(2);
-  document.getElementById('txtLowValue').innerHTML = getCurrencySymbol(selectedCurrency) + getMinArrValue(priceArr).toFixed(2);
-  document.getElementById('txtHighValue').innerHTML = getCurrencySymbol(selectedCurrency) + getMaxArrValue(priceArr).toFixed(2);
+  document.getElementById('txtCurrentValue').innerHTML = currencySymbol + currentPriceObj.price.toFixed(2);
+  document.getElementById('txtLowValue').innerHTML = currencySymbol + getMinArrValue(priceArr).toFixed(2);
+  document.getElementById('txtHighValue').innerHTML = currencySymbol + getMaxArrValue(priceArr).toFixed(2);
 }
 
 function populateYAxisValues(maxValue) {
@@ -152,24 +176,32 @@ function populateYAxisValues(maxValue) {
 }
 
 function drawRowLines(arr) {
+  CONTEXT.beginPath();
 
   for (var y = 0; y <= arr.length; y++) {
     CONTEXT.moveTo(rowPadding, CANVAS.height - arr[y] - rowPadding);
     CONTEXT.lineTo(CANVAS.width, CANVAS.height - arr[y] - rowPadding);
   }
 
-  CONTEXT.lineWidth = 0.5;
+  CONTEXT.lineWidth = lineWidth;
   CONTEXT.strokeStyle = "#ccc";
   CONTEXT.stroke();
+
+  CONTEXT.closePath();
 }
 
 function drawColumnLine(x, dateText) {
+  CONTEXT.beginPath();
+
   CONTEXT.moveTo(columnWidth * x + columnPadding, 0);
   CONTEXT.lineTo(columnWidth * x + columnPadding, CANVAS.height - columnPadding);
 
-  CONTEXT.lineWidth = 0.5;
+  CONTEXT.lineWidth = lineWidth;
   CONTEXT.strokeStyle = "#ccc";
   CONTEXT.stroke();
+
+  CONTEXT.closePath();
+
 }
 
 function writeXAxisDate(x, dateText) {
@@ -201,6 +233,7 @@ function drawXAxisLabels(dataObjArr) {
 
       drawColumnLine(i);
 
+      // If there is more than 15 days left in the month, output the date
       if (parseInt(priceDay) < 15) {
         writeXAxisDate(i, dateString);
       }
@@ -213,19 +246,14 @@ function drawYAxisLabels(arr, relativeYValues) {
   CONTEXT.fillStyle = "#4AA5D9";
 
   for (let i = arr.length - 1; i >= 0; i--) {
-
     CONTEXT.fillText(arr[i], (columnPadding / 2) - (columnPadding / 5), CANVAS.height - relativeYValues[i] - rowPadding);
   }
 }
 
 // Misc
 function getCurrentDateFormatted() {
-  let date = new Date();
-  let month = date.getMonth() + 1;
-
-  if (month < 10) {
-    month = '0' + month;
-  }
+  let date = new Date(),
+    month = appendZeroToDateInt(date.getMonth() + 1);
 
   return date.getFullYear() + '-' + month + '-' + date.getDate();
 }
@@ -266,18 +294,23 @@ function getMinArrValue(arr) {
   return min;
 }
 
-function getDateParamater() {
-  let date, monthNumber, start, end;
-
-  date = new Date();
-  monthNumber = date.getMonth() + 1;
-
-  if (monthNumber < 10) {
-    monthNumber = '0' + monthNumber;
+function appendZeroToDateInt(dateInt) {
+  if (dateInt < 10) {
+    dateInt = '0' + dateInt;
   }
 
-  start = (date.getFullYear() - 1) + '-' + monthNumber + '-' + date.getDate();
-  end = date.getFullYear() + '-' + monthNumber + '-' + date.getDate();
+  return dateInt;
+}
+
+function getDateParamater() {
+  let date = new Date(),
+    monthNumber, day, start, end;
+
+  monthNumber = appendZeroToDateInt(date.getMonth() + 1);
+  day = appendZeroToDateInt(date.getDate())
+
+  start = (date.getFullYear() - 1) + '-' + monthNumber + '-' + day;
+  end = date.getFullYear() + '-' + monthNumber + '-' + day;
 
   return 'start=' + start + '&end=' + end;
 }

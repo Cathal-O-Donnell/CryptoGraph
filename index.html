@@ -23,7 +23,7 @@
       <div class="collapse navbar-collapse" id="navbarColor02">
         <ul class="navbar-nav mr-auto">
           <li class="nav-item">
-            <a class="nav-link" target="_blank" href="https://github.com/Cathal-O-Donnell/CryptoGraph">Source Code</a>
+            <a class="nav-link" target="_blank" href="https://github.com/Cathal-O-Donnell/CryptoGraph">Source Code <em class="fa fa-github gitHubIcon"></em></a>
           </li>
         </ul>
       </div>
@@ -51,9 +51,9 @@
       </div>
 
       <div id="canvasContainer">
-        <canvas id="graphCanvas" class="marginAuto" width="900" height=300></canvas>
+        <canvas id="graphCanvas" class="marginAuto" width=1200 height=300></canvas>
       </div>
-      <div class="row text-center">
+      <div class="row text-center marginTop10">
         <div class="col-md-6">
           <p><strong>Low:</strong> <span id="txtLowValue" class="badge badge-warning"></span></p>
         </div>
@@ -61,6 +61,30 @@
           <p><strong>High:</strong> <span id="txtHighValue" class="badge badge-success"></span></p>
         </div>
       </div>
+    </div>
+
+    <div id="mainContainer" class="col-md-10 offset-md-1 marginTop20 marginBottom20">
+      <div class="row col-md-10 marginTop10 offset-md-1">
+        <div class="col-md-4">
+          <p class="font-weight-bold">Total coins: <span id="txtTotalCoins" class="text-muted"></span></p>
+          <p class="font-weight-bold">Total fees: <span id="txtTotalFees" class="text-muted"></span></p>
+          <p class="font-weight-bold">Total mined: <span id="txtTotalMined" class="text-muted"></span></p>
+        </div>
+
+        <div class="col-md-4">
+          <p class="font-weight-bold">Minutes between blocks: <span id="txtMinBetweenBlocks" class="text-muted"></span></p>
+          <p class="font-weight-bold">Block size: <span id="txtBlockSize" class="text-muted"></span></p>
+          <p class="font-weight-bold">Total blocks: <span id="txtTotalBlocks" class="text-muted"></span></p>
+        </div>
+
+        <div class="col-md-4">
+          <p class="font-weight-bold">Hash rate: <span id="txtHashRate" class="text-muted"></span></p>
+          <p class="font-weight-bold">Difficulty: <span id="txtDifficulty" class="text-muted"></span></p>
+          <p class="font-weight-bold">Bitcoins sent: <span id="txtBitcoinsSent" class="text-muted"></span></p>
+        </div>
+      </div>
+    </div>
+  </div>
 </body>
 
 </html>
