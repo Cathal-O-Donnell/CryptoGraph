@@ -1,5 +1,8 @@
-// API: https://www.coindesk.com/api
-// https://www.blockchain.com/api/charts_api
+/*
+  API's used:
+    - https://www.coindesk.com/api
+    - https://www.blockchain.com/api/charts_api
+*/
 
 "use strict"
 
@@ -50,31 +53,6 @@ function resetData() {
   CONTEXT.clearRect(0, 0, CANVAS.width, CANVAS.height);
 
   init();
-}
-
-function getMiscInfo() {
-
-  $.ajax({
-    url: 'https://api.blockchain.info/stats',
-    dataType: 'json',
-    async: true,
-    success: function(data) {
-
-      document.getElementById('txtHashRate').innerHTML = data.hash_rate;
-      document.getElementById('txtTotalFees').innerHTML = data.total_fees_btc;
-      document.getElementById('txtTotalMined').innerHTML = data.n_btc_mined;
-      document.getElementById('txtTotalCoins').innerHTML = data.totalbc;
-      document.getElementById('txtTotalBlocks').innerHTML = data.n_blocks_total;
-      document.getElementById('txtBlockSize').innerHTML = data.blocks_size;
-      document.getElementById('txtDifficulty').innerHTML = data.difficulty;
-      document.getElementById('txtBitcoinsSent').innerHTML = data.total_btc_sent;
-      document.getElementById('txtMinBetweenBlocks').innerHTML = data.minutes_between_blocks;
-    },
-    error: function(xhr, ajaxOptions, thrownError) {
-      console.log(thrownError + "\r\n" + xhr.statusText + "\r\n" + xhr.responseText)
-      alert('An error has occured');
-    }
-  });
 }
 
 // API
@@ -133,6 +111,31 @@ function getCrypytoPriceData() {
   return resultsArr;
 }
 
+function getMiscInfo() {
+
+  $.ajax({
+    url: 'https://api.blockchain.info/stats',
+    dataType: 'json',
+    async: true,
+    success: function(data) {
+
+      document.getElementById('txtHashRate').innerHTML = data.hash_rate;
+      document.getElementById('txtTotalFees').innerHTML = data.total_fees_btc;
+      document.getElementById('txtTotalMined').innerHTML = data.n_btc_mined;
+      document.getElementById('txtTotalCoins').innerHTML = data.totalbc;
+      document.getElementById('txtTotalBlocks').innerHTML = data.n_blocks_total;
+      document.getElementById('txtBlockSize').innerHTML = data.blocks_size;
+      document.getElementById('txtDifficulty').innerHTML = data.difficulty;
+      document.getElementById('txtBitcoinsSent').innerHTML = data.total_btc_sent;
+      document.getElementById('txtMinBetweenBlocks').innerHTML = data.minutes_between_blocks;
+    },
+    error: function(xhr, ajaxOptions, thrownError) {
+      console.log(thrownError + "\r\n" + xhr.statusText + "\r\n" + xhr.responseText)
+      alert('An error has occured');
+    }
+  });
+}
+
 // Canvas
 function drawLine(arr) {
   let x, y;
@@ -151,15 +154,6 @@ function drawLine(arr) {
   CONTEXT.stroke();
 
   CONTEXT.closePath();
-}
-
-function setInfoText() {
-  let selectedCurrency = getSelectedCurrency(),
-    currencySymbol = getCurrencySymbol(selectedCurrency);
-
-  document.getElementById('txtCurrentValue').innerHTML = currencySymbol + currentPriceObj.price.toFixed(2);
-  document.getElementById('txtLowValue').innerHTML = currencySymbol + getMinArrValue(priceArr).toFixed(2);
-  document.getElementById('txtHighValue').innerHTML = currencySymbol + getMaxArrValue(priceArr).toFixed(2);
 }
 
 function populateYAxisValues(maxValue) {
@@ -206,7 +200,7 @@ function drawColumnLine(x, dateText) {
 
 function writeXAxisDate(x, dateText) {
   CONTEXT.font = "10px Verdana";
-  CONTEXT.fillStyle = "#4AA5D9";
+  CONTEXT.fillStyle = "#17a2b8";
 
   CONTEXT.fillText(dateText, columnWidth * x + columnPadding, CANVAS.height - (rowPadding / 2));
 }
@@ -243,7 +237,7 @@ function drawXAxisLabels(dataObjArr) {
 
 function drawYAxisLabels(arr, relativeYValues) {
   CONTEXT.font = "10px Verdana";
-  CONTEXT.fillStyle = "#4AA5D9";
+  CONTEXT.fillStyle = "#17a2b8";
 
   for (let i = arr.length - 1; i >= 0; i--) {
     CONTEXT.fillText(arr[i], (columnPadding / 2) - (columnPadding / 5), CANVAS.height - relativeYValues[i] - rowPadding);
@@ -251,6 +245,15 @@ function drawYAxisLabels(arr, relativeYValues) {
 }
 
 // Misc
+function setInfoText() {
+  let selectedCurrency = getSelectedCurrency(),
+    currencySymbol = getCurrencySymbol(selectedCurrency);
+
+  document.getElementById('txtCurrentValue').innerHTML = currencySymbol + Number(currentPriceObj.price.toFixed(2)).toLocaleString();
+  document.getElementById('txtLowValue').innerHTML = currencySymbol + Number(getMinArrValue(priceArr).toFixed(2)).toLocaleString();
+  document.getElementById('txtHighValue').innerHTML = currencySymbol + Number(getMaxArrValue(priceArr).toFixed(2)).toLocaleString();
+}
+
 function getCurrentDateFormatted() {
   let date = new Date(),
     month = appendZeroToDateInt(date.getMonth() + 1);
