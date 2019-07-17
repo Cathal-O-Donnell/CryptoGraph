@@ -137,6 +137,13 @@ function getMiscInfo() {
 }
 
 // Canvas
+function setCanvasDimensions() {
+  let canvasContainer = document.getElementById('canvasContainer');
+
+  CANVAS.style.width = (canvasContainer.offsetWidth * 0.9) + 'px';
+  CANVAS.style.height = '300px';
+}
+
 function drawLine(arr) {
   let x, y;
 
@@ -375,6 +382,13 @@ function setUpEventListeners() {
 
 // DOM Ready
 (function() {
+  setCanvasDimensions();
   setUpEventListeners();
   init();
 })();
+
+// Window resize.
+$(window).resize(function() {
+  setCanvasDimensions();
+  init();
+});
